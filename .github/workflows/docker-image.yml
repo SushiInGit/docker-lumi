@@ -9,6 +9,7 @@ on:
   pull_request:
     branches:
       - 'main'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,7 +44,7 @@ jobs:
         name: Prepare
         id: prep
         run: |
-          DOCKER_IMAGE=ghcr.io/${GITHUB_REPOSITORY}
+          DOCKER_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}
           VERSION=edge
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
@@ -51,17 +52,18 @@ jobs:
             VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
           elif [[ $GITHUB_REF == refs/pull/* ]]; then
             VERSION=pr-${{ github.event.number }}
-          TAGS="${DOCKER_IMAGE}:pythonimage"
-          if [ "${{ github.event_name }}" = "push" ]; then
-            TAGS="pythonimage,${DOCKER_IMAGE}:sha-${GITHUB_SHA::8}"
           fi
           echo "name=version::${VERSION}" >> $GITHUB_OUTPUT
-          echo "name=tags::${TAGS}" >> $GITHUB_OUTPUT
           echo "name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "DATE=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
       - 
         name: Push to GitHub Packages
         uses: docker/build-push-action@v3
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.prep.outputs.tags }}
+          file: docker/medusa/Dockerfile
+          build-args: |
+            BUILD_DATE=${{ env.DATE }}
+            BUILD_DATE_ARG=${{ env.DATE }}
+          push: true
+          tags: ghcr.io/sushiingit/docker-lumi:latest
