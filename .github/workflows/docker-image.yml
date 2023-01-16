@@ -61,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: docker/medusa/Dockerfile
+          file: docker/Dockerfile
           build-args: |
             BUILD_DATE=${{ env.DATE }}
             BUILD_DATE_ARG=${{ env.DATE }}
